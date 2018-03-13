@@ -170,6 +170,41 @@ namespace SeniorProject.Controllers
             }  
         }
 
+        [HttpGet("technicians")] //Get all Rooms By Site
+        public List<Tech> GetAllTechs(string site)
+        {
+           List<Tech> technicians = new List<Tech>(); 
+
+           string queryString = 
+           @"Select T.UserID, T.firstname, T.lastname From Technicians T";
+
+           using (SqlConnection connection = new SqlConnection(connectionString))  
+           {    
+              
+                using (var command = new SqlCommand(queryString, connection)) {
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+            
+                try
+                    {
+                        while (reader.Read())
+                        {            
+                            technicians.Add(new Tech() { 
+                            userid = reader[0].ToString(),
+                            firstname = reader[1].ToString(),
+                            lastname = reader[2].ToString()
+                            });
+                        }
+                    }
+                    finally
+                    {       
+                        reader.Dispose();
+                    }  
+                }
+            return technicians;
+            }  
+        }
+
         [HttpGet("tickets")]
         public List<Ticket> GetTickets() //Get All Tickets
         {
@@ -202,7 +237,7 @@ namespace SeniorProject.Controllers
                             room = Int32.Parse(reader[3].ToString()), 
                             description = reader[4].ToString(), 
                             requestdate = DateTime.Parse(reader[5].ToString()),
-                            completedate = reader[6].ToString(),
+                            completedate = Convert.ToDateTime(reader[6].ToString()),
                             ticketnum = Int32.Parse(reader[7].ToString())
                         });
                     }
@@ -343,19 +378,20 @@ namespace SeniorProject.Controllers
             }  
         }
 
-        [HttpGet("tickets/{uid}")] //Get MotD
+        [HttpGet("opentickets/{uid}")] //Get MotD
         public List<Ticket> GetOpenTickets(string uid)
         {
             List<Ticket> tickets = new List<Ticket>(); 
 
-            string queryString = @"SELECT TECH.Firstname + ' ' + TECH.Lastname as Technician, 
-            U.Firstname + ' ' + U.Lastname as Requester, M.MachineName, R.RoomNum,
+            string queryString = @"SELECT   
+            TECH.Firstname + ' ' + TECH.Lastname as Technician, 
+            U.Firstname + ' ' + U.Lastname as Requester, M.MachineName, R.ROOMNUM,
             T.Description, T.[DateOfRequest], T.Ticketnum
             FROM TICKET T
             JOIN TECHNICIANS TECH ON T.Technician = TECH.UserID
             JOIN USERS U ON T.[Requester] = U.UserID
             JOIN MACHINE M ON M.MachineID = T.MachineID
-            JOIN ROOM R ON R.RoomNum = T.RoomNum
+            JOIN ROOM R ON R.RoomNum = T.RoomNum AND R.BuildingID = T.BuildingID
             WHERE T.Requester = @uid and T.[DateOfCompletion] is null";
            
             using (SqlConnection connection = new SqlConnection(connectionString))  {    
@@ -378,6 +414,56 @@ namespace SeniorProject.Controllers
                             description = reader[4].ToString(), 
                             requestdate = DateTime.Parse(reader[5].ToString()),
                             ticketnum = Int32.Parse(reader[6].ToString())
+                        });
+                    }
+                }
+                
+                finally
+                {       
+                    reader.Dispose();
+                }  
+            }
+            return tickets;
+            }   
+        }
+        [HttpGet("closedtickets/{uid}")] //Get MotD
+        public List<Ticket> GetClosedTickets(string uid)
+        {
+            List<Ticket> tickets = new List<Ticket>(); 
+
+            string queryString = @"SELECT   
+            TECH.Firstname + ' ' + TECH.Lastname as Technician, 
+            U.Firstname + ' ' + U.Lastname as Requester, M.MachineName, R.ROOMNUM,
+            T.Description, T.[DateOfRequest], T.Ticketnum, T.dateofcompletion, T.notes
+            FROM TICKET T
+            JOIN TECHNICIANS TECH ON T.Technician = TECH.UserID
+            JOIN USERS U ON T.[Requester] = U.UserID
+            JOIN MACHINE M ON M.MachineID = T.MachineID
+            JOIN ROOM R ON R.RoomNum = T.RoomNum AND R.BuildingID = T.BuildingID
+            WHERE T.Requester = @uid and T.[DateOfCompletion] is not null";
+           
+            using (SqlConnection connection = new SqlConnection(connectionString))  {    
+              
+            using (var command = new SqlCommand(queryString, connection)) {
+            command.Parameters.AddWithValue("@uid", uid); 
+            connection.Open();
+            SqlDataReader reader = command.ExecuteReader();
+          
+                try
+                {
+                    while (reader.Read())
+                    {            
+                        tickets.Add(new Ticket() 
+                        {
+                            technician = reader[0].ToString(),
+                            requester = reader[1].ToString(), 
+                            machine = reader[2].ToString(), 
+                            room = Int32.Parse(reader[3].ToString()), 
+                            description = reader[4].ToString(), 
+                            requestdate = DateTime.Parse(reader[5].ToString()),
+                            ticketnum = Int32.Parse(reader[6].ToString()),
+                            completedate = DateTime.Parse(reader[7].ToString()),
+                            notes = reader[8].ToString()
                         });
                     }
                 }

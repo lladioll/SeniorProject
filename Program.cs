@@ -28,11 +28,6 @@ namespace SeniorProject
                 .UseKestrel()
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseIISIntegration()
-           /*     .UseWebListener(options =>
-                {
-                    options.ListenerSettings.Authentication.Schemes = AuthenticationSchemes.NTLM;
-                    options.ListenerSettings.Authentication.AllowAnonymous = false;
-                }) */
                 .UseStartup<Startup>()
                 .Build();
 

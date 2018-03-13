@@ -31,11 +31,9 @@
 </template>
 
 <script>
-import * as Firebase from 'firebase'
 import 'quasar-extras/animate/fadeIn.css'
 import 'quasar-extras/animate/fadeOut.css'
 import {
-  openURL,
   QLayout,
   QToolbar,
   QToolbarTitle,
@@ -88,18 +86,24 @@ export default {
   computed: {
   },
   methods: {
-    launch (url) {
-      openURL(url)
+    GetAllTechs () {
+      fetch('api/systeminfo/technicians', {
+        headers: {
+          'Accept': 'application/json',
+          'cache-control': 'no-cache'
+        },
+        credentials: 'same-origin',
+        method: 'GET'
+      }).then(response => {
+        return response.json()
+      }).then(json => {
+        this.technicians = json
+        console.log(json)
+      })
     }
   },
   mounted () {
-    var ref = Firebase.database().ref('technicians')
-    this.technicians = []
-    return ref.on('value', snapshot => {
-      snapshot.forEach(userSnapshot => {
-        this.technicians.push(userSnapshot.val())
-      })
-    })
+    this.GetAllTechs()
   }
 }
 </script>

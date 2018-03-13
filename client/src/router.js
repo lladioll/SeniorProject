@@ -65,8 +65,8 @@ let router = new Router({
             requiresAuth: true
           }
         }, {
-          path: 'ticketinfo',
-          component: load('TicketInfo'),
+          path: 'viewtickets',
+          component: load('ViewTickets'),
           meta: {
             requiresAuth: true
           }

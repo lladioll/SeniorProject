@@ -2,7 +2,7 @@
   <div class= "profile">
     <q-layout
       ref="layout"
-      view="lHh Lpr fff"
+      view="lHr LpR fff" 
       :left-class="{'bg-grey-2': true}">
 
       <!-- Toolbar -->
@@ -15,11 +15,7 @@
         <q-toolbar-title>Farmingdale
           <div slot="subtitle">Senior Project</div>
         </q-toolbar-title>
-        <q-btn
-          flat
-          @click="$refs.layout.toggleRight()">
-          <q-icon name="screen share" />
-        </q-btn>
+
         <q-btn
           flat
           @click="$refs.layout.toggleRight()">
@@ -264,12 +260,12 @@ export default {
           link1: {
             icon: 'person',
             text: 'View Current Tickets',
-            url: '/opentickets'
+            url: '/viewtickets'
           },
           link2: {
             icon: 'person_add',
             text: 'View Completed Tickets',
-            url: '/ticketinfo'
+            url: '/viewtickets'
           }
         }
       }]
@@ -277,10 +273,17 @@ export default {
   },
   computed: {
   },
+  watch: {
+    isAuthenticated (val) {
+      if (val === false) {
+        this.$router.push('/welcome')
+      }
+    }
+  },
   methods: {
     signOut () {
       firebase.auth().signOut().then(response => {
-        this.$router.replace('/welcome')
+        // this.$router.push('/welcome')
         this.isAuthenticated = false
       }).catch(error => {
         console.log(error)

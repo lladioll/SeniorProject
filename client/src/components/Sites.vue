@@ -5,23 +5,21 @@
     enter="fadeIn"
     leave="fadeOut">
     <div class="row justify-center"> 
-      <q-card :key="site.siteid" v-for="site in sites" class="card" inline style="width: 300px">
-        <a href="google.com">
+      <q-card :key="index" v-for="(site, index) in sites" class="card" inline style="width: 300px">
+        <router-link :to="{ name: 'createticket' }">
           <div class="q-card-media relative-position">
              <gmap-map
-                :center="center"
+                :center="markers[index].position"
                 :zoom="17"
                 map-type-id="terrain"
                 style="width: 100%; height: 250px">
                 <gmap-marker
-                  :key="index"
-                  v-for="(m, index) in markers"
-                  :position="m.position"
+                  :position="markers[index].position"
                   @click="showing = true">
                 </gmap-marker>
               </gmap-map>
           </div>
-        </a>
+        </router-link>
         <div class="q-card-primary q-card-container row no-wrap">
           <div class="col column">
             <div class="q-card-title">
@@ -122,10 +120,7 @@ export default {
       }).then(json => {
         this.sites = json
         var sites = json
-        this.center.lat = this.sites[0].latitude
-        this.center.lng = this.sites[0].longitude
         for (var site in sites) {
-          console.log()
           var positions = {
             position: {
               lat: sites[site].latitude,
