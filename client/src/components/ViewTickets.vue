@@ -7,54 +7,61 @@
 
   <q-tab-pane name="xtab-1">
     <div class="tickets">
-  <q-card inline style="width: 600px" :key="ticket.ticketnum" v-for="ticket in openTickets">
-    <q-card-title style="background-color: #007471; text-align: center; color: white;">
-      Ticket # {{ticket.ticketnum}}
-      <span slot="subtitle" style="color:white;">Ticket Information</span>
-      <q-icon slot="right" name="more_vert">
-        <q-popover ref="popover">
-          <q-list link class="no-border">
-            <q-item @click="$refs.popover.close()">
-              <q-item-main label="Remove Card" />
-            </q-item>
-            <q-item @click="$refs.popover.close()">
-              <q-item-main label="Send Feedback" />
-            </q-item>
-            <q-item @click="$refs.popover.close()">
-              <q-item-main label="Share" />
-            </q-item>
-          </q-list>
-        </q-popover>
-      </q-icon>
-    </q-card-title>
-    <q-card-separator />
-    <q-card-main>
-      <q-field>
-        <q-input v-model="ticket.technician" float-label="Technician" />
-      </q-field>
-      <q-field>
-        <q-input v-model="ticket.requester" float-label="Requester" />
-      </q-field>
-      <q-field>
-        <q-input v-model="ticket.requestdate" float-label="Date of Request" />
-      </q-field>
-      <q-field>
-        <q-input v-model="ticket.machine" float-label="Machine" />
-      </q-field>
-      <q-field>
-        <q-input v-model="ticket.description" float-label="Issue Description" />
-      </q-field>
-    </q-card-main>
-    <q-card-separator />
-    <q-card-actions>
-      <q-btn flat>Edit Ticket</q-btn>
-      <q-btn flat>Action 2</q-btn>
-    </q-card-actions>
-  </q-card>
+      <q-list separator>
+        <q-collapsible icon="explore" :label="`Ticket # ` + ticket.ticketnum" :key="ticket.ticketnum" v-for="ticket in openTickets">
+          <div>
+            <q-card inline style="width: 100%" >
+              <q-card-title style="background-color: #007471; text-align: center; color: white;">
+                Ticket # {{ticket.ticketnum}}
+                <span slot="subtitle" style="color:white;">Ticket Information</span>
+                <q-icon slot="right" name="more_vert">
+                  <q-popover ref="popover">
+                    <q-list link class="no-border">
+                      <q-item @click="$refs.popover.close()">
+                        <q-item-main label="Remove Card" />
+                      </q-item>
+                      <q-item @click="$refs.popover.close()">
+                        <q-item-main label="Send Feedback" />
+                      </q-item>
+                      <q-item @click="$refs.popover.close()">
+                        <q-item-main label="Share" />
+                      </q-item>
+                    </q-list>
+                  </q-popover>
+                </q-icon>
+              </q-card-title>
+              <q-card-separator />
+              <q-card-main>
+                <q-field>
+                  <q-input v-model="ticket.technician" float-label="Technician" />
+                </q-field>
+                <q-field>
+                  <q-input v-model="ticket.requester" float-label="Requester" />
+                </q-field>
+                <q-field>
+                  <q-input v-model="ticket.requestdate" float-label="Date of Request" />
+                </q-field>
+                <q-field>
+                  <q-input v-model="ticket.machine" float-label="Machine" />
+                </q-field>
+                <q-field>
+                  <q-input v-model="ticket.description" float-label="Issue Description" />
+                </q-field>
+              </q-card-main>
+              <q-card-separator />
+              <q-card-actions>
+                <q-btn flat>Edit Ticket</q-btn>
+                <q-btn flat>Action 2</q-btn>
+              </q-card-actions>
+            </q-card>
+          </div>
+        </q-collapsible>
+      </q-list>
+  
 </div>
 </q-tab-pane>
   <q-tab-pane name="xtab-2"><div class="tickets" >
-  <q-card inline style="width: 600px" :key="ticket.ticketnum" v-for="ticket in closedTickets">
+  <q-card inline style="width: 100%" :key="ticket.ticketnum" v-for="ticket in closedTickets">
     <q-card-title style="background-color: maroon; text-align: center; color: white;">
       Ticket # {{ticket.ticketnum}}
       <span slot="subtitle" style="color:white">Ticket Information</span>
@@ -234,9 +241,6 @@ export default {
   color: white;
 }
 .tickets {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+ 
 }
 </style>

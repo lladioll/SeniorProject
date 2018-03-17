@@ -17,6 +17,7 @@ let router = new Router({
   routes: [
     {
       path: '/',
+      redirect: '/welcome',
       component: load('Layout'),
       children: [
         {
@@ -26,7 +27,8 @@ let router = new Router({
           path: 'sitemap',
           component: load('SiteMap'),
           meta: {
-            requiresAuth: true
+            requiresAuth: true,
+            requiresAdmin: true
           }
         }, {
           path: 'createticket',
@@ -44,25 +46,59 @@ let router = new Router({
           path: 'technicians',
           component: load('Technicians'),
           meta: {
-            requiresAuth: true
+            requiresAuth: true,
+            requiresAdmin: true
+          }
+        }, {
+          path: 'addtechnician',
+          component: load('AddTechnician'),
+          meta: {
+            requiresAuth: true,
+            requiresAdmin: true
+          }
+        }, {
+          path: 'adminticketview',
+          component: load('AdminTicketView'),
+          meta: {
+            requiresAuth: true,
+            requiresAdmin: true
+          }
+        }, {
+          path: 'techticketview',
+          component: load('TechTicketView'),
+          meta: {
+            requiresAuth: true,
+            techAuth: true
+          }
+        }, {
+          path: '/site/:siteid',
+          props: true,
+          name: 'site',
+          component: load('Site'),
+          meta: {
+            requiresAuth: true,
+            techAuth: true
           }
         }, {
           path: 'sites',
           component: load('Sites'),
           meta: {
-            requiresAuth: true
+            requiresAuth: true,
+            techAuth: true
           }
         }, {
-          path: 'sites/:siteid',
-          component: load('SiteMap'),
+          path: 'admindashboard',
+          component: load('AdminDashboard'),
           meta: {
-            requiresAuth: true
+            requiresAuth: true,
+            requiresAdmin: true
           }
         }, {
           path: 'addsites',
           component: load('AddSites'),
           meta: {
-            requiresAuth: true
+            requiresAuth: true,
+            techAuth: true
           }
         }, {
           path: 'viewtickets',
@@ -74,7 +110,15 @@ let router = new Router({
           path: 'addmachine',
           component: load('AddMachine'),
           meta: {
-            requiresAuth: true
+            requiresAuth: true,
+            techAuth: true
+          }
+        }, {
+          path: 'machines',
+          component: load('Machines'),
+          meta: {
+            requiresAuth: true,
+            techAuth: true
           }
         }
       ]
@@ -87,9 +131,39 @@ let router = new Router({
 router.beforeEach((to, from, next) => {
   let currentUser = firebase.auth().currentUser
   let requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-
-  if (requiresAuth && !currentUser) next('welcome')
-  else if (!requiresAuth && currentUser) next('profile')
+  let requiresAdmin = to.matched.some(record => record.meta.adminAuth)
+  let requiresTech = to.matched.some(record => record.meta.techAuth)
+  if (requiresAuth) {
+    if (!currentUser) {
+      next('welcome')
+    }
+    else if (requiresTech) {
+      var userId = currentUser.uid
+      firebase.database().ref('/users/' + userId).once('value').then(function (snapshot) {
+        var role = (snapshot.val() && snapshot.val().role) || 'Unauthorized'
+        console.log(role)
+        if (role === 'Admin' || role === 'Technician') {
+          next()
+        }
+        else {
+          next('profile')
+        }
+      })
+    }
+    else if (requiresAdmin) {
+      firebase.database().ref('/users/' + userId).once('value').then(function (snapshot) {
+        var role = (snapshot.val() && snapshot.val().role) || 'Unauthorized'
+        console.log(role)
+        if (role === 'Admin') {
+          next()
+        }
+        else {
+          next('profile')
+        }
+      })
+    }
+    else next()
+  }
   else next()
 })
 

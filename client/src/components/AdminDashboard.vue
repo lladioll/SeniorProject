@@ -34,7 +34,7 @@ import {
 } from 'quasar'
 
 export default {
-  name: 'addtechnician',
+  name: 'admindashboard',
   components: {
     QLayout,
     QToolbar,

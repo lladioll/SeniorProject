@@ -27,13 +27,26 @@ namespace SeniorProject.Controllers
     {
         public static string connectionString = @"";
 
+
         // GET api/values
         [HttpGet("sites")] //Get all Sites
         public List<Site> GetSites()
         {
            List<Site> sites = new List<Site>(); 
 
-           string queryString = "SELECT * FROM BUILDING";
+           string queryString = @"select B.BuildingId, buildingname, latitude, longitude,
+            SUM(case when DateOfCompletion is not null then 1 else 0 end) as ClosedTickets,
+            SUM(case when DateOfCompletion is null and t.buildingid is not null then 1 else 0 end) as OpenTickets,
+            COUNT(t.BuildingID) as TotalTickets,
+            (select COUNT(DISTINCT ROOMNUM) from room r where r.BuildingID = b.BuildingID) AS Rooms,
+            (select COUNT(DISTINCT machineid) from machine m 
+            JOIN BUILDING SUB ON SUB.BuildingID = M.BuildingID
+            WHERE SUB.BuildingID = B.BuildingID) AS Machines
+            FROM building b
+            LEFT JOIN ticket t on b.BuildingID = t.BuildingID
+            GROUP BY b.BuildingId, BuildingName, Latitude, Longitude;";
+
+
            
            using (SqlConnection connection = new SqlConnection(connectionString))  
            {    
@@ -49,8 +62,13 @@ namespace SeniorProject.Controllers
                             sites.Add(new Site() { 
                             siteid = reader[0].ToString(),
                             sitename = reader[1].ToString(), 
-                            longitude = Double.Parse(reader[2].ToString()),
-                            latitude = Double.Parse(reader[3].ToString())
+                            latitude = Double.Parse(reader[2].ToString()),
+                            longitude = Double.Parse(reader[3].ToString()),
+                            opentickets = Int32.Parse(reader[4].ToString()),
+                            closedtickets = Int32.Parse(reader[5].ToString()),
+                            totaltickets = Int32.Parse(reader[6].ToString()),
+                            roomcount = Int32.Parse(reader[7].ToString()),
+                            machinecount = Int32.Parse(reader[8].ToString())
                             });
                         }
                     } 
@@ -60,7 +78,60 @@ namespace SeniorProject.Controllers
                         reader.Dispose();
                     }  
                 }
+                
             return sites;
+            }  
+        }
+
+        [HttpGet("site/{siteid}")] //Get all Sites
+         public Site GetSite(string siteid)
+        {
+           Site site = new Site(); 
+
+           string queryString = @"select B.BuildingId, buildingname, latitude, longitude,
+            SUM(case when DateOfCompletion is not null then 1 else 0 end) as ClosedTickets,
+            SUM(case when DateOfCompletion is null and t.buildingid is not null then 1 else 0 end) as OpenTickets,
+            COUNT(t.BuildingID) as TotalTickets,
+            (select COUNT(DISTINCT ROOMNUM) from room r where r.BuildingID = b.BuildingID) AS Rooms,
+            (select COUNT(DISTINCT machineid) from machine m 
+            JOIN BUILDING SUB ON SUB.BuildingID = M.BuildingID
+            WHERE SUB.BuildingID = B.BuildingID) AS Machines
+            FROM building b
+            LEFT JOIN ticket t on b.BuildingID = t.BuildingID
+            WHERE t.BUILDINGID = @buildingid
+            GROUP BY b.BuildingId, BuildingName, Latitude, Longitude;";
+     
+           using (SqlConnection connection = new SqlConnection(connectionString))  
+           {    
+              
+                using (var command = new SqlCommand(queryString, connection)) {
+                command.Parameters.AddWithValue("@buildingid", siteid);  
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+            
+                try
+                    {
+                        while (reader.Read())
+                        {            
+                            site.siteid = reader[0].ToString();
+                            site.sitename = reader[1].ToString(); 
+                            site.latitude = Double.Parse(reader[2].ToString());;
+                            site.longitude = Double.Parse(reader[3].ToString());
+                            site.opentickets = Int32.Parse(reader[4].ToString());
+                            site.closedtickets = Int32.Parse(reader[5].ToString());
+                            site.totaltickets = Int32.Parse(reader[6].ToString());
+                            site.roomcount = Int32.Parse(reader[7].ToString());
+                            site.machinecount = Int32.Parse(reader[8].ToString());
+                        }
+                    } 
+                    
+                    finally
+                    {       
+                        reader.Dispose();
+                    }  
+                }
+                
+            return site;
             }  
         }
 
@@ -210,14 +281,15 @@ namespace SeniorProject.Controllers
         {
             List<Ticket> tickets = new List<Ticket>(); 
 
-            string queryString = @"SELECT TECH.Firstname + ' ' + TECH.Lastname as Technician, 
-            U.Firstname + ' ' + U.Lastname as Requester, M.MachineName, R.RoomNum,
-            T.Description, T.RequestDateTime, T.CompletionDateTime, T.Ticketnum
-            FROM TICKETS T
-            JOIN TECHNICIANS TECH ON T.Technician = TECH.TechID
-            JOIN USERS U ON T.[User] = U.UserID
-            JOIN MACHINES M ON M.MachineID = T.Machine
-            JOIN ROOMS R ON R.RoomID = T.RoomNum";
+            string queryString = @"SELECT   
+            TECH.Firstname + ' ' + TECH.Lastname as Technician, 
+            U.Firstname + ' ' + U.Lastname as Requester, M.MachineName, R.ROOMNUM,
+            T.Description, T.[DateOfRequest], T.[DateOfCompletion], T.Ticketnum
+            FROM TICKET T
+            JOIN TECHNICIANS TECH ON T.Technician = TECH.UserID
+            JOIN USERS U ON T.[Requester] = U.UserID
+            JOIN MACHINE M ON M.MachineID = T.MachineID
+            JOIN ROOM R ON R.RoomNum = T.RoomNum AND R.BuildingID = T.BuildingID";
            
             using (SqlConnection connection = new SqlConnection(connectionString))  {    
               
@@ -236,8 +308,8 @@ namespace SeniorProject.Controllers
                             machine = reader[2].ToString(), 
                             room = Int32.Parse(reader[3].ToString()), 
                             description = reader[4].ToString(), 
-                            requestdate = DateTime.Parse(reader[5].ToString()),
-                            completedate = Convert.ToDateTime(reader[6].ToString()),
+                            requestdate = Convert.ToDateTime(reader[5].ToString()),
+                            completedate =  reader.IsDBNull(6) ? null : (DateTime?)reader.GetDateTime(6),
                             ticketnum = Int32.Parse(reader[7].ToString())
                         });
                     }
@@ -477,6 +549,89 @@ namespace SeniorProject.Controllers
             }   
         }
 
+        [HttpGet("openticketcount/{uid}")] //Get MotD
+        public JsonResult GetOpenTicketCount(string uid)
+        {
+            int ticketcount = 0; 
+
+            string queryString = @"SELECT   
+            Count(*)
+            FROM TICKET
+            WHERE Technician = @uid and [DateOfCompletion] is null";
+           
+            using (SqlConnection connection = new SqlConnection(connectionString))  {    
+              
+            using (var command = new SqlCommand(queryString, connection)) {
+            command.Parameters.AddWithValue("@uid", uid); 
+            connection.Open();
+            SqlDataReader reader = command.ExecuteReader();
+          
+                try
+                {
+                    while (reader.Read())
+                    {            
+                        ticketcount = Convert.ToInt32(reader[0].ToString());
+                    }
+                }
+                
+                finally
+                {       
+                    reader.Dispose();
+                }  
+            }
+            return Json(ticketcount);
+            }   
+        }
+
+        [HttpGet("ticketsbytech/{uid}")] //Get MotD
+        public List<Ticket> GetTicketsByTech(string uid)
+        {
+            List<Ticket> tickets = new List<Ticket>(); 
+
+            string queryString = @"SELECT   
+            TECH.Firstname + ' ' + TECH.Lastname as Technician, 
+            U.Firstname + ' ' + U.Lastname as Requester, M.MachineName, R.ROOMNUM,
+            T.Description, T.[DateOfRequest], T.Ticketnum
+            FROM TICKET T
+            JOIN TECHNICIANS TECH ON T.Technician = TECH.UserID
+            JOIN USERS U ON T.[Requester] = U.UserID
+            JOIN MACHINE M ON M.MachineID = T.MachineID
+            JOIN ROOM R ON R.RoomNum = T.RoomNum AND R.BuildingID = T.BuildingID
+            WHERE T.Technician = @uid;";
+           
+            using (SqlConnection connection = new SqlConnection(connectionString))  {    
+              
+            using (var command = new SqlCommand(queryString, connection)) {
+            command.Parameters.AddWithValue("@uid", uid); 
+            connection.Open();
+            SqlDataReader reader = command.ExecuteReader();
+          
+                try
+                {
+                    while (reader.Read())
+                    {            
+                        tickets.Add(new Ticket() 
+                        {
+                            technician = reader[0].ToString(),
+                            requester = reader[1].ToString(), 
+                            machine = reader[2].ToString(), 
+                            room = Int32.Parse(reader[3].ToString()), 
+                            description = reader[4].ToString(), 
+                            requestdate = DateTime.Parse(reader[5].ToString()),
+                            ticketnum = Int32.Parse(reader[6].ToString())
+                        });
+                    }
+                }
+                
+                finally
+                {       
+                    reader.Dispose();
+                }  
+            }
+            return tickets;
+            }   
+        }
+
         [HttpPost("ticket/{user}")] //Add user
         public ObjectResult CreateTicket(string user, [FromBody] Ticket ticket)
         {          
@@ -567,10 +722,8 @@ namespace SeniorProject.Controllers
             }
         }
         [HttpPost("user/{uid}")] //Add user
-        public ObjectResult CreateUser(string uid, [FromBody] User user)
-        {          
-            JObject resp = new JObject();
-
+        public JsonResult CreateUser(string uid, [FromBody] User user)
+        {                 
             string UserInsert = 
             @"INSERT INTO Users (UserID, FirstName, LastName, Email, Role, DateRegistered)
             VALUES (@uid, @firstname, @lastname, @email, @role, @registered);";
@@ -590,7 +743,7 @@ namespace SeniorProject.Controllers
                 connection.Dispose();
             }
 
-            return Ok(resp);
+            return Json(user.role);
         }
 
         [HttpPost("upload/{uid}")] //Upload profile pic

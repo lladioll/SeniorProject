@@ -2,9 +2,9 @@
 <div>
   <gmap-map
     :center="center"
-    :zoom="17"
+    :zoom="12"
     map-type-id="terrain"
-    style="width: 100%; height: calc(100vh - 50px)">
+    style="width: 100%; height: calc(100vh - 50px);">
     <gmap-marker
       :key="index"
       v-for="(m, index) in markers"
@@ -69,6 +69,7 @@ import {
 } from 'quasar'
 
 export default {
+  props: ['siteid'],
   name: 'sitemap',
   components: {
     Alert,
@@ -133,12 +134,7 @@ export default {
         lat: 0,
         lng: 0
       },
-      markers: [{
-        position: {
-          lat: 0,
-          lng: 0
-        }
-      }]
+      markers: []
     }
   }
 }
@@ -153,5 +149,8 @@ export default {
 }
 .caption {
   font-size: 40px;
+}
+.vue-map {
+  overflow: visible
 }
 </style>

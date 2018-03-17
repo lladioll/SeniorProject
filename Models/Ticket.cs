@@ -13,7 +13,8 @@ namespace SeniorProject.Models
         public int room { get; set; }
         public string description { get; set; }
         public DateTime requestdate { get; set; }
-        public DateTime completedate { get; set; }
+        public DateTime? completedate { get; set; }
         public string notes { get; set; }
+        public int ticketcount { get; set; }
     }
 }

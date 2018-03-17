@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -34,6 +35,7 @@ namespace SeniorProject
         public void ConfigureServices(IServiceCollection services)
         {
             // Add framework services.
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddMvc();
         }
 
@@ -51,12 +53,17 @@ namespace SeniorProject
                     ProjectPath = Path.Combine(Directory.GetCurrentDirectory(), "client"),
                     ConfigFile = Path.Combine(Directory.GetCurrentDirectory(), "client/webpack.config.js")
                 });
+
+                
             }
             else
             {
                 app.UseDefaultFiles();
                 app.UseStaticFiles();
             }
+
+            WebHelpers.Configure(app.ApplicationServices.GetRequiredService<IHttpContextAccessor>());
+
             app.UseMvc();
         }
     }
