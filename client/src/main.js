@@ -15,9 +15,12 @@ import Quasar from 'quasar'
 import router from './router'
 import * as VueGoogleMaps from 'vue2-google-maps'
 import * as Firebase from 'firebase'
+import Vuelidate from 'vuelidate'
 
 Vue.config.productionTip = false
+Vue.use(Vuelidate)
 Vue.use(Quasar) // Install Quasar Framework
+
 let app
 var config = {
   apiKey: '',
@@ -40,7 +43,7 @@ if (__THEME === 'mat') {
 }
 import 'quasar-extras/material-icons'
 // import 'quasar-extras/ionicons'
-// import 'quasar-extras/fontawesome'
+import 'quasar-extras/fontawesome'
 // import 'quasar-extras/animate'
 
 Quasar.start(() => {

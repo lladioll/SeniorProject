@@ -4,9 +4,6 @@
     <q-card>
       <div slot="right"> 
         <div class="title">
-          <label class="custom-file-upload">
-            Edit Profile
-           </label>
         </div>
       </div>
       <q-card-media>
@@ -20,13 +17,12 @@
         <div class="row justify-center"> 
         {{user.firstname}} {{user.lastname}}
         </div>
-        <div class="row justify-center"> 
-          <q-rating slot="subtitle" v-model="stars" :max="5" />
+        <div class="row justify-center">
         </div>
       </q-card-title>
       <q-card-main>
         <div class="row justify-center"> 
-          <p class="text-faded">This is a test paragraph describing the technician.</p>
+          <p class="text-faded">This is a test paragraph</p>
         </div>
       </q-card-main>
       <q-card-separator />
@@ -34,14 +30,14 @@
         <q-btn flat round small><q-icon name="event" /></q-btn>
         <q-btn v-if="user.role === 'Admin'" flat>Assign Ticket</q-btn>
         <q-btn v-if="user.role === 'Student' || user.role === 'Faculty'" flat>View Open Tickets</q-btn>
-        <q-btn  @click="open = true" flat>Upload Profile Photo</q-btn>
+        <q-btn @click="open = true" flat>Upload Profile Photo</q-btn>
       </q-card-actions>
     </q-card>
   </q-pull-to-refresh>
 
-  <q-modal  :content-css="{padding: '5px'}" v-model="open">
-    <q-uploader :url="uploadDest" />
-    <q-btn style="margin-top: 10px; align-text: right" color="primary" @click="open = false">Close</q-btn>
+  <q-modal :content-css="{padding: '5px'}" v-model="open">
+    <q-uploader ref="upld" :url="uploadDest" />
+    <q-btn style="margin-top: 10px; align-text: right" color="primary" @click="open = false, reset()">Close</q-btn>
   </q-modal>
 
 </div>
@@ -125,13 +121,40 @@ export default {
       open: false
     }
   },
+  destroyed () {
+    window.URL.revokeObjectURL(this.img)
+  },
   methods: {
+    requestGeoCode () {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          this.position = position.coords
+        })
+      }
+    },
+    reset () {
+      this.$refs.upld.reset()
+    },
     refresher (done) {
-      // this.img = require('./../assets/ProfilePics/' + user.uid + '/profile.jpg')
-      this.$router.go()
       setTimeout(() => {
+        this.getProfilePic()
         done()
       }, 1000)
+    },
+    getProfilePic (user) {
+      fetch('api/systeminfo/profilephoto/' + user, {
+        headers: {
+          'Accept': 'image/gif',
+          'cache-control': 'no-cache'
+        },
+        credentials: 'same-origin',
+        method: 'GET'
+      }).then(response => {
+        response.blob().then(blobResponse => {
+          var img = blobResponse
+          this.img = URL.createObjectURL(img)
+        })
+      })
     },
     getUser () {
       var user = firebase.auth().currentUser
@@ -151,7 +174,7 @@ export default {
             this.img = require('./../assets/ProfilePics/DefaultPhoto.png')
           }
           else {
-            this.img = require('./../assets/ProfilePics/' + user.uid + '/profile.jpg')
+            this.getProfilePic(user.uid)
           }
         })
       }

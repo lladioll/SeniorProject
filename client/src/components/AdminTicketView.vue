@@ -12,12 +12,10 @@
     </div>
 
     <!-- Custom renderer for "source" column -->
-    <div slot="col-source" slot-scope="cell">
-        <span v-if="cell.data === 'Audit'" class="label text-white bg-primary">
-        Audit
-        <q-tooltip>Some data</q-tooltip>
-        </span>
-        <span v-else class="label text-white bg-negative">{{cell.data}}</span>
+    <div slot="col-status" slot-scope="cell">
+        <span v-if="cell.data === 'Open'" class="my-label text-white bg-primary">{{cell.data}}</span>
+        <span v-else-if="cell.data === 'Closed'" class="my-label text-white bg-negative">{{cell.data}}</span>
+        <span v-else class="my-label text-black bg-warning">{{cell.data}}</span>
     </div>
 
     <!-- Custom renderer for "action" column with button for custom action -->
@@ -27,14 +25,14 @@
 
     <!-- Custom renderer when user selected one or more rows -->
     <div slot="selection" slot-scope="selection">
-        <q-btn color="primary" @click="changeMessage(selection)">
-        <i>edit</i>
+      <q-btn color="primary">
+        <i>Edit</i>
         </q-btn>
-        <q-btn color="primary" @click="deleteRow(selection)">
-        <i>delete</i>
+        <q-btn color="primary">
+        <i>Close</i>
         </q-btn>
     </div>
-    </q-data-table>
+  </q-data-table>
 </div>
 </template>
 
@@ -105,7 +103,7 @@ export default {
         refresh: true,
         noHeader: false,
         responsive: true,
-        selection: 'multiple',
+        selection: 'single',
         pagination: {
           rowsPerPage: 15,
           options: [5, 10, 15, 30, 50, 500]
@@ -149,6 +147,14 @@ export default {
             return new Date(value).toLocaleString()
           }
         }
+      }, {
+        label: 'Notes',
+        field: 'notes'
+      }, {
+        label: 'Status',
+        field: 'status',
+        sort: true,
+        type: 'string'
       }]
     }
   },

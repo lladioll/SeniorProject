@@ -2,8 +2,9 @@
 <div>
   <gmap-map
     :center="center"
-    :zoom="12"
-    map-type-id="terrain"
+    :zoom="18"
+    :tilt="45"
+    map-type-id="satellite"
     style="width: 100%; height: calc(100vh - 50px);">
     <gmap-marker
       :key="index"
@@ -13,32 +14,6 @@
       @click="showing = true">
     </gmap-marker>
   </gmap-map>
-
-  <q-popover v-model="showing" anchor="center middle">
-    <q-card inline style="width: 500px">
-      <q-card-media>
-      <img src="~assets/img.png">
-      </q-card-media>
-      <q-card-title>
-        Whitman Hall
-        <div slot="right" class="row items-center">
-          <q-icon name="place" /> 250 ft
-        </div>
-      </q-card-title>
-      <q-card-main>
-        <p>OnSite Location</p>
-        <p class="text-faded">Description of building</p>
-      </q-card-main>
-      <q-card-separator />
-      <q-card-actions>
-        <q-btn flat round small><q-icon name="event" /></q-btn>
-        <q-btn flat>5:30PM</q-btn>
-        <q-btn flat>7:30PM</q-btn>
-        <q-btn flat>9:00PM</q-btn>
-        <q-btn flat color="primary">Available Slots</q-btn>
-      </q-card-actions>
-    </q-card>
-  </q-popover>
 </div>
 </template>
 

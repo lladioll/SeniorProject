@@ -54,6 +54,7 @@ import {
 } from 'quasar'
 
 export default {
+  inject: ['layout'],
   name: 'welcome',
   components: {
     Alert,
@@ -84,6 +85,8 @@ export default {
     return {
       message: ''
     }
+  },
+  mounted () {
   },
   created () {
     this.getMotD()

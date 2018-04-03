@@ -16,5 +16,6 @@ namespace SeniorProject.Models
         public DateTime? completedate { get; set; }
         public string notes { get; set; }
         public int ticketcount { get; set; }
+        public string status { get; set; }
     }
 }

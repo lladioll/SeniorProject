@@ -1,12 +1,37 @@
 <template>
 <div>
-  {{message}}
+  <slick ref="slick" v-if="machines.length" :options="slickOptions">
+ 
+    <q-card inline style="width: 300px;" v-for="machine in machines" :key="machine.computerName">
+      <q-card-media>
+        <img style="padding: 15px;" src="~assets/pc.png">
+      </q-card-media>
+      <q-card-title>
+        {{machine.computerName}}
+      </q-card-title>
+      <q-card-main>
+        <p>{{machine.operatingSystem}} {{machine.architecture}}</p>
+        <p>RAM: {{machine.ram}}</p>
+        <p>HDD: {{machine.usedhdd}}G / {{machine.hdd}}G</p>
+        <p>{{machine.processor}}</p>
+      </q-card-main>
+      <q-card-separator />
+      <q-card-actions>
+        <q-btn flat round small><q-icon name="event" /></q-btn>
+        <q-btn flat>Edit</q-btn>
+        <q-btn flat>Delete</q-btn>
+      </q-card-actions>
+    </q-card>
+
+</slick>
 </div>
 </template>
 
 <script>
-import 'quasar-extras/animate/fadeIn.css'
-import 'quasar-extras/animate/fadeOut.css'
+import Slick from 'vue-slick'
+import 'slick-carousel/slick/slick.css'
+import 'slick-carousel/slick/slick-theme.css'
+
 import {
   QLayout,
   QToolbar,
@@ -20,6 +45,9 @@ import {
   QItemMain,
   QCollapsible,
   QCard,
+  QCardActions,
+  QCardMedia,
+  QRating,
   QCardTitle,
   QPopover,
   QCarousel,
@@ -36,6 +64,7 @@ import {
 export default {
   name: 'machines',
   components: {
+    Slick,
     QLayout,
     QToolbar,
     QToolbarTitle,
@@ -48,6 +77,9 @@ export default {
     QItemMain,
     QCollapsible,
     QCard,
+    QCardActions,
+    QCardMedia,
+    QRating,
     QCardTitle,
     QPopover,
     QCarousel,
@@ -62,25 +94,104 @@ export default {
   },
   data () {
     return {
-      message: 'test'
+      machines: [],
+      slickOptions: {
+        centerMode: true,
+        slidesToShow: 3,
+        dots: true,
+        arrows: false,
+        responsive: [
+          {
+            breakpoint: 768,
+            settings: {
+              arrows: false,
+              centerMode: true,
+              centerPadding: '40px',
+              slidesToShow: 3
+            }
+          },
+          {
+            breakpoint: 480,
+            settings: {
+              arrows: false,
+              centerMode: true,
+              centerPadding: '40px',
+              slidesToShow: 1
+            }
+          }
+        ]
+      }
     }
   },
-  mounted () {
+  created () {
+    this.GetMachines()
   },
   methods: {
+    GetMachines () {
+      fetch('api/systeminfo/machinelist', {
+        headers: {
+          'Accept': 'application/json',
+          'cache-control': 'no-cache'
+        },
+        credentials: 'same-origin',
+        method: 'GET'
+      }).then(response => {
+        return response.json()
+      }).then(json => {
+        this.machines = json
+      })
+    },
+    next () {
+      this.$refs.slick.next()
+    },
+    prev () {
+      this.$refs.slick.prev()
+    },
+    reInit () {
+      this.$nextTick(() => {
+        this.$refs.slick.reSlick()
+      })
+    },
+    handleAfterChange (event, slick, currentSlide) {
+      console.log('handleAfterChange', event, slick, currentSlide)
+    },
+    handleBeforeChange (event, slick, currentSlide, nextSlide) {
+      console.log('handleBeforeChange', event, slick, currentSlide, nextSlide)
+    },
+    handleBreakpoint (event, slick, breakpoint) {
+      console.log('handleBreakpoint', event, slick, breakpoint)
+    },
+    handleDestroy (event, slick) {
+      console.log('handleDestroy', event, slick)
+    },
+    handleEdge (event, slick, direction) {
+      console.log('handleEdge', event, slick, direction)
+    },
+    handleInit (event, slick) {
+      console.log('handleInit', event, slick)
+    },
+    handleReInit (event, slick) {
+      console.log('handleReInit', event, slick)
+    },
+    handleSetPosition (event, slick) {
+      console.log('handleSetPosition', event, slick)
+    },
+    handleSwipe (event, slick, direction) {
+      console.log('handleSwipe', event, slick, direction)
+    },
+    handleLazyLoaded (event, slick, image, imageSource) {
+      console.log('handleLazyLoaded', event, slick, image, imageSource)
+    },
+    handleLazeLoadError (event, slick, image, imageSource) {
+      console.log('handleLazeLoadError', event, slick, image, imageSource)
+    }
   }
 }
 </script>
 
 <style lang="stylus">
-.card-wrapper {
-  padding: 2%;
-}
-.card {
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-  transition: 0.3s;
-}
-.card:hover {
-  box-shadow: 0 10px 25px 0 rgba(0,0,0,0.2);
-}
+    /* the slides */
+  .slick-slide {
+    margin: 0 10px;
+  }
 </style>

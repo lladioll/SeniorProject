@@ -1,7 +1,26 @@
 <template>
-<div class="top row justify-center"> 
-  <h1>Create Ticket</h1>
-  <q-stepper :vertical="vertical" class="stepper" color="secondary" ref="stepper" alternative-labels>
+<div> 
+  <div class="top row justify-center"> 
+    <h2>Create Ticket</h2>
+  </div>
+
+  <div class="row justify-center" style="width: 100%; padding: 20px">
+      <q-field
+        icon="report problem"
+        label="Select Issue Type To Begin">
+        <q-dialog-select
+            v-model="issueType"
+            :options="issueOptions"
+            ok-label="Done"
+            cancel-label="Cancel"
+            title="Select Issue"/>
+        </q-field>
+      </div>
+
+  
+
+<div class="row justify-center" style="margin-top: 2%"> 
+  <q-stepper v-if="issueType === 'Hardware' || issueType === 'Software' || issueType === 'Networking'" :vertical="vertical" class="stepper" color="secondary" ref="stepper" alternative-labels>
     <q-step default name="first" title="Choose a Location">
       <q-select
       v-model="ticket.site"
@@ -32,7 +51,7 @@
         <q-btn color="secondary" flat @click="$refs.stepper.previous()">Back</q-btn>
       </q-stepper-navigation>
     </q-step>
-    <q-step name="third" title="Choose a Technician">
+    <q-step v-if="role==='Faculty'" name="third" title="Choose a Technician">
       <q-select
         v-model="ticket.technician"
         float-label="Choose a Technician"
@@ -66,6 +85,34 @@
       </q-stepper-navigation>
     </q-step>
   </q-stepper>
+
+  <q-stepper v-else-if="issueType === 'Email' || issueType === 'Blackboard'" :vertical="vertical" class="stepper" color="secondary" ref="stepper" alternative-labels>
+    <q-step default name="first" title="Describe Your Issue">
+      <q-input
+        v-model="ticket.description"
+        type="textarea"
+        float-label="Textarea"
+        :max-height="100"/>
+      <!-- Navigation for this step at the end of QStep-->
+      <q-stepper-navigation>
+        <q-btn color="secondary" @click="$refs.stepper.next()">Continue</q-btn>
+      </q-stepper-navigation>
+    </q-step> 
+    <q-step name="Second" title="Review and Finalize">
+      <div>Tech: {{ticket.technician}}</div>
+      <div>Room: {{ticket.room}}</div>
+      <div>Machine: {{ticket.machine}}</div>
+      <div>Issue: {{ticket.description}}</div>
+      <q-stepper-navigation>
+        <q-btn color="secondary" @click="CreateTicket">Submit</q-btn>
+        <q-btn color="secondary" @click="$refs.stepper.goToStep('first')">Restart</q-btn>
+        <q-btn color="secondary" flat @click="$refs.stepper.previous()">Back</q-btn>
+      </q-stepper-navigation>
+    </q-step>
+  </q-stepper>
+
+</div>
+
 </div>
 </template>
 
@@ -75,8 +122,10 @@ import 'quasar-extras/animate/bounceInDown.css'
 import 'quasar-extras/animate/bounceOutUp.css'
 import {
   Alert,
+  Platform,
   Toast,
   QField,
+  QDialogSelect,
   QLayout,
   QToolbar,
   QToolbarTitle,
@@ -106,10 +155,12 @@ import {
 export default {
   name: 'createticket',
   components: {
+    Platform,
     Alert,
     Toast,
     QField,
     QLayout,
+    QDialogSelect,
     QToolbar,
     QToolbarTitle,
     QBtn,
@@ -136,6 +187,8 @@ export default {
   },
   data () {
     return {
+      role: null,
+      platform: this.$q.platform.is,
       ticket: {
         technician: '',
         site: '',
@@ -143,6 +196,23 @@ export default {
         machine: '',
         description: ''
       },
+      issueType: '',
+      issueOptions: [{
+        label: 'Email',
+        value: 'Email'
+      }, {
+        label: 'Blackboard',
+        value: 'Blackboard'
+      }, {
+        label: 'Hardware',
+        value: 'Hardware'
+      }, {
+        label: 'Software',
+        value: 'Software'
+      }, {
+        label: 'Networking',
+        value: 'Neworking'
+      }],
       techs: [],
       sites: [],
       machines: [],
@@ -269,6 +339,10 @@ export default {
   },
   mounted () {
     this.GetSites()
+    var user = firebase.auth().currentUser
+    firebase.database().ref('/users/' + user.uid).once('value').then(snapshot => {
+      this.role = (snapshot.val() && snapshot.val().role)
+    })
     var isMobile = {
       Android: function () {
         return navigator.userAgent.match(/Android/i)

@@ -145,9 +145,6 @@ router.beforeEach((to, from, next) => {
         if (role === 'Admin' || role === 'Technician') {
           next()
         }
-        else {
-          next('profile')
-        }
       })
     }
     else if (requiresAdmin) {
@@ -156,9 +153,6 @@ router.beforeEach((to, from, next) => {
         console.log(role)
         if (role === 'Admin') {
           next()
-        }
-        else {
-          next('profile')
         }
       })
     }

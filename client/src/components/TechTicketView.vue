@@ -12,9 +12,10 @@
     </div>
 
     <!-- Custom renderer for "source" column -->
-    <div slot="col-completedate" slot-scope="cell">
-        <span v-if="cell.data === null" class="my-label text-white bg-primary">Open</span>
-        <span v-else class="my-label text-white bg-negative">{{cell.data}}</span>
+    <div slot="col-status" slot-scope="cell">
+        <span v-if="cell.data === 'Open'" class="my-label text-white bg-primary">{{cell.data}}</span>
+        <span v-else-if="cell.data === 'Closed'" class="my-label text-white bg-negative">{{cell.data}}</span>
+        <span v-else class="my-label text-black bg-warning">{{cell.data}}</span>
     </div>
 
     <!-- Custom renderer for "action" column with button for custom action -->
@@ -24,14 +25,56 @@
 
     <!-- Custom renderer when user selected one or more rows -->
     <div slot="selection" slot-scope="selection">
-        <q-btn color="primary" @click="changeMessage(selection)">
-        <i>edit</i>
+      <q-btn color="primary" @click="editTicket(selection)">
+        <i>Edit</i>
         </q-btn>
-        <q-btn color="primary" @click="deleteRow(selection)">
-        <i>delete</i>
+        <q-btn color="primary" @click="editTicket(selection)">
+        <i>Close</i>
         </q-btn>
     </div>
-    </q-data-table>
+  </q-data-table>
+
+  <q-modal ref="layoutModal" v-model="ticketModal" :content-css="{minWidth: '40vw', minHeight: '85vh'}">
+    <q-modal-layout>
+      <q-toolbar slot="header">
+        <q-btn flat @click="$refs.layoutModal.close()">
+          <q-icon name="keyboard_arrow_left" />
+        </q-btn>
+        <div class="q-toolbar-title">
+          Edit Ticket # {{ticketinfo.ticket}}
+        </div>
+      </q-toolbar>
+      <q-toolbar slot="header">
+      </q-toolbar>
+      <div class="layout-padding">
+        <h1>Edit Ticket {{ticketinfo.ticket}}</h1>
+        <p class="caption">
+           <q-select
+            v-model="ticketinfo.status"
+            float-label="Ticket Status"
+            radio
+          :options="selectOptions"
+          />
+          <q-input
+            v-model="ticketinfo.notes"
+            type="textarea"
+            float-label="Notes"
+            :max-height="100"
+            :min-rows="7"
+          />
+        </p>
+        <div class="actions" style="align-text: right;">
+          <q-btn color="primary" @click="UpdateTicketInfo()">Update</q-btn>
+          <q-btn color="primary" @click="$refs.layoutModal.close()">Close</q-btn>
+        </div>
+      </div>
+      <q-toolbar slot="footer">
+        <div class="q-toolbar-title">
+          Footer
+        </div>
+      </q-toolbar>
+    </q-modal-layout>
+  </q-modal>
 </div>
 </template>
 
@@ -40,7 +83,10 @@ import * as firebase from 'firebase'
 import 'quasar-extras/animate/fadeIn.css'
 import 'quasar-extras/animate/fadeOut.css'
 import {
+  Toast,
   QLayout,
+  QSelect,
+  QModalLayout,
   QToolbar,
   QToolbarTitle,
   QBtn,
@@ -48,6 +94,7 @@ import {
   QList,
   QListHeader,
   QItem,
+  QModal,
   QItemSide,
   QItemMain,
   QCollapsible,
@@ -68,10 +115,14 @@ import {
 } from 'quasar'
 
 export default {
+  inject: [ 'layout' ],
   name: 'techticketview',
   components: {
     QLayout,
+    QSelect,
+    QModalLayout,
     QDataTable,
+    QModal,
     QTooltip,
     QToolbar,
     QToolbarTitle,
@@ -99,13 +150,33 @@ export default {
   data () {
     return {
       tickets: [],
+      ticketModal: false,
+      ticketinfo: {
+        ticketnum: '',
+        notes: '',
+        status: ''
+      },
+      selectOptions: [
+        {
+          label: 'Open',
+          value: 'Open'
+        },
+        {
+          label: 'In Progress',
+          value: 'In Progress'
+        },
+        {
+          label: 'Closed',
+          value: 'Closed'
+        }
+      ],
       config: {
         title: 'Data Table',
         rowHeight: '50px',
         refresh: true,
         noHeader: false,
         responsive: true,
-        selection: 'multiple',
+        selection: 'single',
         pagination: {
           rowsPerPage: 15,
           options: [5, 10, 15, 30, 50, 500]
@@ -149,43 +220,67 @@ export default {
             return new Date(value).toLocaleString()
           }
         }
+      }, {
+        label: 'Notes',
+        field: 'notes'
+      }, {
+        label: 'Status',
+        field: 'status',
+        sort: true,
+        type: 'string'
       }]
     }
   },
   mounted () {
     this.GetAssignedTickets()
+    this.toggleDrawers()
   },
   methods: {
     refresh (done) {
       this.timeout = setTimeout(() => {
+        this.GetAssignedTickets()
         done()
-      }, 5000)
+      }, 1000)
     },
-    selection (number, rows) {
-      console.log(`selected ${number}: ${rows}`)
-    },
-    rowClick (row) {
-      console.log('clicked on a row', row)
+    toggleDrawers () {
+      this.layout.hideLeft()
+      this.layout.hideRight()
     },
     beforeDestroy () {
       clearTimeout(this.timeout)
     },
-    changeMessage (props) {
-      props.rows.forEach(row => {
-        row.data.message = 'Gogu'
-      })
+    editTicket (props) {
+      this.ticketModal = true
+      this.ticketinfo.ticketnum = props.rows[0].data.ticketnum
     },
     deleteRow (props) {
       props.rows.forEach(row => {
         this.table.splice(row.index, 1)
       })
     },
+    UpdateTicketInfo () {
+      fetch('api/systeminfo/updateticket/', {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(this.ticketinfo)
+      }).then(response => {
+        this.ticketinfo = {}
+        this.ticketModal = false
+        this.refresh()
+        Toast.create.positive({
+          html: 'Ticket Closed Successfully!',
+          timeout: 2000
+        })
+      })
+    },
     GetAssignedTickets () {
       var user = firebase.auth().currentUser
       fetch('api/systeminfo/ticketsbytech/' + user.uid, {
         headers: {
-          'Accept': 'application/json',
-          'cache-control': 'no-cache'
+          'Accept': 'application/json'
         },
         credentials: 'same-origin',
         method: 'GET'

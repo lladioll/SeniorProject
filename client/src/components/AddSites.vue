@@ -1,37 +1,5 @@
 <template>
 <div>
-  <ul class="breadcrumb">
-    <li>
-      <router-link to="/addsites">
-        <q-icon name="home"/>Home
-      </router-link>
-    </li>
-    <li>
-      <router-link to="/sites">
-        <q-icon name="home"/>Sites
-      </router-link>
-    </li>
-    <li>
-      <router-link to="/sites">
-        <q-icon name="home"/>Tickets
-      </router-link>
-    </li>
-    <li>
-      <router-link to="/sites">
-        <q-icon name="home"/>Machines
-      </router-link>
-    </li>
-    <li>
-      <router-link to="/sites">
-        <q-icon name="home"/>Profile
-      </router-link>
-    </li>
-    <li>
-      <router-link to="/sites">
-        <q-icon name="home"/>Home
-      </router-link>
-    </li>
-  </ul>
   <q-card class="card">
     <q-card-title style="background-color: #007471; text-align: center; color: white">
       Add a New Site

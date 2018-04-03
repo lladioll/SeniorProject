@@ -27,12 +27,11 @@ namespace SeniorProject.Controllers
     {
         public static string connectionString = @"";
 
-
         // GET api/values
-        [HttpGet("sites")] //Get all Sites
-        public List<Site> GetSites()
+        [HttpGet("sites")] //Get Site Info
+        public List<SiteInfo> GetSites()
         {
-           List<Site> sites = new List<Site>(); 
+           List<SiteInfo> sites = new List<SiteInfo>(); 
 
            string queryString = @"select B.BuildingId, buildingname, latitude, longitude,
             SUM(case when DateOfCompletion is not null then 1 else 0 end) as ClosedTickets,
@@ -59,7 +58,7 @@ namespace SeniorProject.Controllers
                     {
                         while (reader.Read())
                         {            
-                            sites.Add(new Site() { 
+                            sites.Add(new SiteInfo() { 
                             siteid = reader[0].ToString(),
                             sitename = reader[1].ToString(), 
                             latitude = Double.Parse(reader[2].ToString()),
@@ -83,10 +82,84 @@ namespace SeniorProject.Controllers
             }  
         }
 
-        [HttpGet("site/{siteid}")] //Get all Sites
-         public Site GetSite(string siteid)
+        [HttpGet("sitelist")] //Get all Sites
+        public List<Site> GetSiteList()
         {
-           Site site = new Site(); 
+           List<Site> sites = new List<Site>(); 
+
+           string queryString = @"select BuildingId, buildingname, latitude, longitude from building";
+
+           using (SqlConnection connection = new SqlConnection(connectionString))  
+           {    
+              
+                using (var command = new SqlCommand(queryString, connection)) {
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+            
+                try
+                    {
+                        while (reader.Read())
+                        {            
+                            sites.Add(new Site() { 
+                            siteid = reader[0].ToString(),
+                            sitename = reader[1].ToString(),
+                            latitude = Double.Parse(reader[2].ToString()),
+                            longitude = Double.Parse(reader[3].ToString())
+                            });
+                        }
+                    } 
+                    
+                    finally
+                    {       
+                        reader.Dispose();
+                    }  
+                }
+                
+            return sites;
+            }  
+        }
+
+         [HttpGet("service")] //Get All Services
+        public List<Service> SiteService()
+        {
+           List<Service> services = new List<Service>(); 
+
+           string queryString = @"Select * From Service";
+
+           using (SqlConnection connection = new SqlConnection(connectionString))  
+           {    
+              
+                using (var command = new SqlCommand(queryString, connection)) {
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+            
+                try
+                    {
+                        while (reader.Read())
+                        {            
+                            services.Add(new Service() { 
+                            buildingid = reader[0].ToString(),
+                            userid = reader[1].ToString(),
+                            roomnum = reader[2].ToString()
+                            });
+                        }
+                    } 
+                    
+                    finally
+                    {       
+                        reader.Dispose();
+                    }  
+                }
+     
+                
+            return services;
+            }  
+        }
+
+        [HttpGet("site/{siteid}")] //Get Sites By Site ID
+         public SiteInfo GetSite(string siteid)
+        {
+           SiteInfo site = new SiteInfo(); 
 
            string queryString = @"select B.BuildingId, buildingname, latitude, longitude,
             SUM(case when DateOfCompletion is not null then 1 else 0 end) as ClosedTickets,
@@ -169,7 +242,42 @@ namespace SeniorProject.Controllers
             return rooms;
             }  
         }
-        [HttpGet("machines/{site}/{room}")] //Get all Rooms By Site
+        [HttpGet("rooms")] //Get all Rooms
+        public List<Room> RoomsBuilding()
+        {
+           List<Room> rooms = new List<Room>(); 
+
+           string queryString = "SELECT buildingname, r.BUILDINGID, ROOMNUM FROM ROOM r join building b on b.buildingid = r.buildingid";
+           
+           using (SqlConnection connection = new SqlConnection(connectionString))  
+           {    
+              
+                using (var command = new SqlCommand(queryString, connection)) {  
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+            
+                try
+                    {
+                        while (reader.Read())
+                        {            
+                            rooms.Add(new Room() {
+                            buildingname = reader[0].ToString(), 
+                            buildingid = reader[1].ToString(),
+                            roomnum = reader[2].ToString()
+                            });
+                        }
+                    } catch (Exception ex) {
+                        Console.WriteLine(ex);
+                    }
+                    finally
+                    {       
+                        reader.Dispose();
+                    }  
+                }
+            return rooms;
+            }  
+        }
+        [HttpGet("machines/{site}/{room}")] //Get Machines w/ Site and Room
         public List<SystemInfo> GetMachines(string site, string room)
         {
            List<SystemInfo> machines = new List<SystemInfo>(); 
@@ -203,7 +311,7 @@ namespace SeniorProject.Controllers
             return machines;
             }  
         }
-        [HttpGet("technicians/{site}")] //Get all Rooms By Site
+        [HttpGet("technicians/{site}")] //Get Technicians By Site
         public List<Tech> GetTechs(string site)
         {
            List<Tech> technicians = new List<Tech>(); 
@@ -241,7 +349,7 @@ namespace SeniorProject.Controllers
             }  
         }
 
-        [HttpGet("technicians")] //Get all Rooms By Site
+        [HttpGet("technicians")] //Get All Technicians
         public List<Tech> GetAllTechs(string site)
         {
            List<Tech> technicians = new List<Tech>(); 
@@ -276,6 +384,61 @@ namespace SeniorProject.Controllers
             }  
         }
 
+        [HttpGet("machinelist")] //Get All Machines
+        public List<Machine> GetAllMachines()
+        {
+           List<Machine> machines = new List<Machine>(); 
+
+           string queryString = 
+           @"Select [MachineID]
+            ,[BuildingID]
+            ,[RoomID]
+            ,[MachineName]
+            ,[OperatingSystem]
+            ,[Architecture]
+            ,[ServicePack]
+            ,[RAM]
+            ,[HDD]
+            ,[TotalSpaceUsed]
+            ,[SerialNum]
+            ,[Processor] FROM MACHINE";
+
+           using (SqlConnection connection = new SqlConnection(connectionString))  
+           {    
+              
+                using (var command = new SqlCommand(queryString, connection)) {
+                connection.Open();
+                SqlDataReader reader = command.ExecuteReader();
+            
+                try
+                    {
+                        while (reader.Read())
+                        {            
+                            machines.Add(new Machine() { 
+                            computerid = reader[0].ToString(),
+                            buildingid = reader[1].ToString(),
+                            roomid = reader[2].ToString(),
+                            computerName = reader[3].ToString(),
+                            operatingSystem = reader[4].ToString(),
+                            architecture = reader[5].ToString(),
+                            servicePack = reader[6].ToString(),
+                            ram = Double.Parse(reader[7].ToString()),
+                            hdd = Int32.Parse(reader[8].ToString()),
+                            usedhdd = Int32.Parse(reader[9].ToString()),
+                            processor = reader[10].ToString(),
+                            serialnum = reader[11].ToString()
+                            });
+                        }
+                    }
+                    finally
+                    {       
+                        reader.Dispose();
+                    }  
+                }
+            return machines;
+            }  
+        }
+
         [HttpGet("tickets")]
         public List<Ticket> GetTickets() //Get All Tickets
         {
@@ -284,7 +447,7 @@ namespace SeniorProject.Controllers
             string queryString = @"SELECT   
             TECH.Firstname + ' ' + TECH.Lastname as Technician, 
             U.Firstname + ' ' + U.Lastname as Requester, M.MachineName, R.ROOMNUM,
-            T.Description, T.[DateOfRequest], T.[DateOfCompletion], T.Ticketnum
+            T.Description, T.[DateOfRequest], T.[DateOfCompletion], T.Ticketnum, T.Notes, T.Status
             FROM TICKET T
             JOIN TECHNICIANS TECH ON T.Technician = TECH.UserID
             JOIN USERS U ON T.[Requester] = U.UserID
@@ -310,7 +473,9 @@ namespace SeniorProject.Controllers
                             description = reader[4].ToString(), 
                             requestdate = Convert.ToDateTime(reader[5].ToString()),
                             completedate =  reader.IsDBNull(6) ? null : (DateTime?)reader.GetDateTime(6),
-                            ticketnum = Int32.Parse(reader[7].ToString())
+                            ticketnum = Int32.Parse(reader[7].ToString()),
+                            notes = reader[8].ToString(),
+                            status = reader[9].ToString()
                         });
                     }
                 }
@@ -324,8 +489,57 @@ namespace SeniorProject.Controllers
             }   
         }
        
+       [HttpGet("unassignedtickets")]
+        public List<Ticket> GetUnassignedTickets() //Get All Unassigned Tickets
+        {
+            List<Ticket> tickets = new List<Ticket>(); 
+
+            string queryString = @"SELECT    
+            U.Firstname + ' ' + U.Lastname as Requester, M.MachineName, R.ROOMNUM,
+            T.Description, T.[DateOfRequest], T.[DateOfCompletion], T.Ticketnum, T.Notes, T.Status
+            FROM TICKET T
+            JOIN TECHNICIANS TECH ON T.Technician = TECH.UserID
+            JOIN USERS U ON T.[Requester] = U.UserID
+            JOIN MACHINE M ON M.MachineID = T.MachineID
+            JOIN ROOM R ON R.RoomNum = T.RoomNum AND R.BuildingID = T.BuildingID
+            WHERE TECHNICIAN IS NULL;";
+           
+            using (SqlConnection connection = new SqlConnection(connectionString))  {    
+              
+            using (var command = new SqlCommand(queryString, connection)) {
+            connection.Open();
+            SqlDataReader reader = command.ExecuteReader();
+          
+                try
+                {
+                    while (reader.Read())
+                    {            
+                        tickets.Add(new Ticket() 
+                        {
+                            requester = reader[0].ToString(), 
+                            machine = reader[2].ToString(), 
+                            room = Int32.Parse(reader[3].ToString()), 
+                            description = reader[4].ToString(), 
+                            requestdate = Convert.ToDateTime(reader[5].ToString()),
+                            completedate =  reader.IsDBNull(6) ? null : (DateTime?)reader.GetDateTime(6),
+                            ticketnum = Int32.Parse(reader[7].ToString()),
+                            notes = reader[8].ToString(),
+                            status = reader[9].ToString()
+                        });
+                    }
+                }
+                
+                finally
+                {       
+                    reader.Dispose();
+                }  
+            }
+            return tickets;
+            }   
+        }
+
         [HttpGet("machine")] 
-        public Object GetSystemInfo() //Get specific machine info
+        public Object GetSystemInfo() //Get Specific Machine Info
         {
             var localIP = WebHelpers.GetLocalIP;
             Console.WriteLine(localIP);
@@ -390,7 +604,7 @@ namespace SeniorProject.Controllers
         }
 
         [HttpGet("software")] 
-        public Object GetSystemSoftware() //Get machine software info
+        public Object GetSystemSoftware() //Get Machine Software Info
         {
             var localIP = WebHelpers.GetLocalIP;
     
@@ -450,7 +664,7 @@ namespace SeniorProject.Controllers
             }  
         }
 
-        [HttpGet("opentickets/{uid}")] //Get MotD
+        [HttpGet("opentickets/{uid}")] //Get All Open Tickets By Technician
         public List<Ticket> GetOpenTickets(string uid)
         {
             List<Ticket> tickets = new List<Ticket>(); 
@@ -498,7 +712,7 @@ namespace SeniorProject.Controllers
             return tickets;
             }   
         }
-        [HttpGet("closedtickets/{uid}")] //Get MotD
+        [HttpGet("closedtickets/{uid}")] //Get Closed Tickets By Technician
         public List<Ticket> GetClosedTickets(string uid)
         {
             List<Ticket> tickets = new List<Ticket>(); 
@@ -549,7 +763,7 @@ namespace SeniorProject.Controllers
             }   
         }
 
-        [HttpGet("openticketcount/{uid}")] //Get MotD
+        [HttpGet("openticketcount/{uid}")] //Get All Open Tickets by Technician
         public JsonResult GetOpenTicketCount(string uid)
         {
             int ticketcount = 0; 
@@ -583,15 +797,15 @@ namespace SeniorProject.Controllers
             }   
         }
 
-        [HttpGet("ticketsbytech/{uid}")] //Get MotD
-        public List<Ticket> GetTicketsByTech(string uid)
+        [HttpGet("ticketsbytech/{uid}")] //ALl Tickets By Individual Technicians
+        public List<Ticket> GetTicketsByTech(string uid) 
         {
             List<Ticket> tickets = new List<Ticket>(); 
 
             string queryString = @"SELECT   
             TECH.Firstname + ' ' + TECH.Lastname as Technician, 
             U.Firstname + ' ' + U.Lastname as Requester, M.MachineName, R.ROOMNUM,
-            T.Description, T.[DateOfRequest], T.Ticketnum
+            T.Description, T.[DateOfRequest], T.[DateOfCompletion], T.Ticketnum, T.Notes, T.Status
             FROM TICKET T
             JOIN TECHNICIANS TECH ON T.Technician = TECH.UserID
             JOIN USERS U ON T.[Requester] = U.UserID
@@ -618,7 +832,10 @@ namespace SeniorProject.Controllers
                             room = Int32.Parse(reader[3].ToString()), 
                             description = reader[4].ToString(), 
                             requestdate = DateTime.Parse(reader[5].ToString()),
-                            ticketnum = Int32.Parse(reader[6].ToString())
+                            completedate = reader.IsDBNull(6) ? null : (DateTime?)reader.GetDateTime(6),
+                            ticketnum = Int32.Parse(reader[7].ToString()),
+                            notes = reader[8].ToString(),
+                            status = reader[9].ToString()
                         });
                     }
                 }
@@ -632,7 +849,7 @@ namespace SeniorProject.Controllers
             }   
         }
 
-        [HttpPost("ticket/{user}")] //Add user
+        [HttpPost("ticket/{user}")] //Post Tickets
         public ObjectResult CreateTicket(string user, [FromBody] Ticket ticket)
         {          
             JObject resp = new JObject();
@@ -667,7 +884,7 @@ namespace SeniorProject.Controllers
             return Ok(resp); 
         }  
 
-        [HttpPost("sites")] //Add sites
+        [HttpPost("sites")] //Post Sites
         public void AddSite([FromBody] Site newsite) 
         {
             string queryString = 
@@ -687,7 +904,7 @@ namespace SeniorProject.Controllers
             }
         } 
 
-        [HttpPost("machine")] //Add machine
+        [HttpPost("machine")] //Post Machine
         public void AddMachine([FromBody] SystemInfo machine) 
         {
 
@@ -721,7 +938,7 @@ namespace SeniorProject.Controllers
                 
             }
         }
-        [HttpPost("user/{uid}")] //Add user
+        [HttpPost("user/{uid}")] //Post USer
         public JsonResult CreateUser(string uid, [FromBody] User user)
         {                 
             string UserInsert = 
@@ -751,7 +968,7 @@ namespace SeniorProject.Controllers
         {          
             JObject resp = new JObject();
 
-            var pathWithEnv = @"%USERPROFILE%\Desktop\SeniorProject\client\src\assets\ProfilePics\" + uid;
+            var pathWithEnv = @"C:\ProfilePics\" + uid;
             var filePath = Path.Combine(Environment.ExpandEnvironmentVariables(pathWithEnv), "profile.jpg");
 
             foreach (var file in Request.Form.Files)
@@ -785,6 +1002,51 @@ namespace SeniorProject.Controllers
             return Ok(resp);
         }
 
+        [HttpGet("profilephoto/{uid}")] //Get profile pic
+        public ActionResult GetProfilePhoto(string uid)
+        {          
+            string queryString = 
+            @"Select ProfilePic from Users
+            WHERE
+            UserID = @uid;";
+
+            var profileLocation = "";
+            
+            using (SqlConnection connection = new SqlConnection(connectionString)) 
+            {    
+              
+                using (var command = new SqlCommand(queryString, connection)) 
+                {
+                    command.Parameters.AddWithValue("@uid", uid); 
+                    connection.Open();
+                    SqlDataReader reader = command.ExecuteReader();
+                
+                    try
+                    {
+                        while (reader.Read())
+                        {            
+                            profileLocation = reader[0].ToString();
+                        }
+                    }
+                    
+                    finally
+                    {       
+                        reader.Dispose();
+                    }  
+                }
+            }
+            Console.WriteLine(profileLocation);
+            FileStream fs = new FileStream(profileLocation, FileMode.Open, FileAccess.Read);
+            BinaryReader br = new BinaryReader(fs);
+            byte[] imgdata = br.ReadBytes((int)fs.Length);
+            br.Close();
+            fs.Close();
+
+            var result = Convert.ToBase64String(imgdata);
+
+            return File(System.Convert.FromBase64String(result), "image/gif");
+        }
+
         [HttpGet("twilio")] //Send Text
         public void AssignTicket()
         {
@@ -800,7 +1062,7 @@ namespace SeniorProject.Controllers
             );
         }
 
-        [HttpGet("user/{uid}")]
+        [HttpGet("user/{uid}")] //Get User
         public Object GetUser(string uid)
         {          
             string queryString = 
@@ -841,9 +1103,53 @@ namespace SeniorProject.Controllers
             }
         }
 
-        [HttpDelete("{id}")] //Delete API
-        public void Delete(int id)
+        [HttpPut("updateticket")] //Update Ticket
+        public ObjectResult UpdateTicket([FromBody] Ticket ticketinfo)
         {
+            JObject resp = new JObject();
+
+            string queryString = 
+            @"UPDATE TICKET SET 
+            [Status] = @status,
+            [DateOfCompletion] = @completedate,
+            [LastModified] = @modifieddate,
+            [Notes] = @notes
+            where [TicketNum] = @ticketnum;";
+   
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {    
+                SqlCommand command = new SqlCommand(
+                queryString, connection);
+                command.Parameters.AddWithValue("@status", ticketinfo.status);  
+                command.Parameters.AddWithValue("@completedate", DateTime.Now); 
+                command.Parameters.AddWithValue("@modifieddate", DateTime.Now);
+                command.Parameters.AddWithValue("@notes", ticketinfo.notes);
+                command.Parameters.AddWithValue("@ticketnum", ticketinfo.ticketnum);   
+                connection.Open();
+                command.ExecuteNonQuery();
+                connection.Dispose();
+            }
+        return Ok(resp);
+        }
+
+        [HttpDelete("deleteticket/{ticketnum}")] //Delete Ticket
+        public ObjectResult DeleteTicket(string ticketnum)
+        {
+            JObject resp = new JObject();
+
+            string queryString = 
+            @"Delete from ticket where ticketnum = @ticketnum;";
+   
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {    
+                SqlCommand command = new SqlCommand(
+                queryString, connection);
+                command.Parameters.AddWithValue("@ticketnum", ticketnum);   
+                connection.Open();
+                command.ExecuteNonQuery();
+                connection.Dispose();
+            }
+        return Ok(resp);
         }
     }
 }

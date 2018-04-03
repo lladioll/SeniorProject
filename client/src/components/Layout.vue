@@ -1,15 +1,15 @@
 <template>
   <div class= "profile">
-    <q-layout v-model="sides"
+    <q-layout
       ref="layout"
-      view="lHr LpR fff" 
+      view="lHr lpr lfr"
       :left-class="{'bg-grey-2': true}">
 
       <!-- Toolbar -->
       <q-toolbar slot="header">
         <q-btn
           flat
-          @click="sides.left = !sides.left">
+          @click="$refs.layout.toggleLeft()">
           <q-icon name="menu" />
         </q-btn>
         <q-toolbar-title>Farmingdale
@@ -18,13 +18,14 @@
 
         <q-btn
           flat
-          @click="sides.right = !sides.right">
+          @click="$refs.layout.toggleRight()">
           <q-icon name="account box" />
         </q-btn>
       </q-toolbar>
       
       <q-tabs slot="navigation">
         <q-route-tab v-if="role==='Technician'" alert slot="title" to="/techticketview" exact :count="ticketCount" name="tab-1" icon="message" />
+        <q-route-tab v-if="role==='Student' || role==='Faculty'" alert slot="title" to="/createticket" exact name="tab-1" icon="message" />
         <q-route-tab slot="title" name="tab-2" to="/sites" icon="fingerprint" />
         <q-route-tab slot="title" to="/profile" exact name="tab-3" icon="account_box" />
         <q-route-tab slot="title" to="/technicians" name="tab-4" icon="accessibility" />
@@ -89,53 +90,79 @@
         </q-list>
       </div>
 
-      <q-modal :content-css="{minWidth: '400px', minHeight: '400px', padding: '70px'}" v-model="loginModal" >
-        <div v-if="userLogin === true" class="wrapper-login justify-center">
-          <p class="caption">Sign In</p>
-          <q-field style="margin-top: 5%">
-            <q-input v-model="email" type="email" float-label="Email" />
-          </q-field>
-          <q-field>
-            <q-input v-model="password" type="password" float-label="Password" />
-          </q-field>
-          <q-field>
-            <div class="row justify-center">
-              <q-btn color="primary text-center" @click="signInWithEmailAndPassword()">Login</q-btn>
+      <q-modal ref="layoutModal" :content-css="{minWidth: '400px', minHeight: '530px'}" v-model="loginModal" >
+        <q-modal-layout>
+          <q-toolbar slot="header">
+            <q-btn flat @click="$refs.layoutModal.close()">
+              <q-icon name="keyboard_arrow_left" />
+            </q-btn>
+            <div class="q-toolbar-title">
+              Log In
             </div>
-          </q-field>
-          <q-field>
-            <div class="row justify-center" @click="userLogin = false, userReg = true">
-              <a>Register</a>
-            </div>
-            <div class="row justify-center"> 
-              <a>Forgot or Reset Password</a>
-            </div>
-          </q-field>
-        </div>
-        <div v-if="userReg" class="wrapper-register justify-center">
-          <p class="caption">Register</p>
-          <q-field>
-            <q-input v-model="form.user.firstname" float-label="First Name" />
-          </q-field>
-          <q-field>
-            <q-input v-model="form.user.lastname" float-label="Last Name" />
-          </q-field>
-          <q-field>
-            <q-input v-model="form.user.role" float-label="Role" />
-          </q-field>
-          <q-field>
-            <q-input v-model="form.user.email" type="email" float-label="Email" />
-          </q-field>
-          <q-field>
-            <q-input v-model="password" type="password" float-label="Password" />
-          </q-field>
-          <div class="row justify-center"  style="padding-top: 5%">
-            <q-btn color="primary text-center" @click="createUserWithEmailAndPassword()">Register</q-btn>
+          </q-toolbar>
+           <div class="layout-padding" style="padding:8%">
+          <div v-if="userLogin === true" >
+            <h3>Sign In</h3>
+            <q-field error-label="A valid Email is required">
+              <q-input 
+              @blur="$v.credentials.email.$touch"
+              :error="$v.credentials.email.$error" 
+              v-model="credentials.email" 
+              type="email" 
+              float-label="Email" />
+            </q-field>
+            <q-field error-label="Password is required"> 
+              <q-input @keyup.enter="signInWithEmailAndPassword()"
+              @blur="$v.credentials.password.$touch"
+              :error="$v.credentials.password.$error" 
+              v-model="credentials.password" 
+              type="password"
+              float-label="Password" />
+            </q-field>
+            <q-field>
+              <div class="row justify-center">
+                <q-btn color="primary text-center" @click="signInWithEmailAndPassword()">Login</q-btn>
+              </div>
+            </q-field>
+            <q-field>
+              <div class="row justify-center" @click="userLogin = false, userReg = true">
+                <a>Register</a>
+              </div>
+              <div class="row justify-center" style="padding-top: 2%"> 
+                <a>Forgot or Reset Password</a>
+              </div>
+            </q-field>
           </div>
-          <div @click="userLogin=true, userReg=false" style="padding-top: 5%" class="row justify-center">
-            <a>Return to Login</a>
+          <div v-if="userReg" class="wrapper-register justify-center">
+            <p class="caption">Register</p>
+            <q-field>
+              <q-input v-model="registration.user.firstname" float-label="First Name" />
+            </q-field>
+            <q-field>
+              <q-input v-model="registration.user.lastname" float-label="Last Name" />
+            </q-field>
+            <q-field>
+              <q-input v-model="registration.user.role" float-label="Role" />
+            </q-field>
+            <q-field>
+              <q-input v-model="registration.user.email" type="email" float-label="Email" />
+            </q-field>
+            <q-field>
+              <q-input v-model="credentials.password" type="password" float-label="Password" />
+            </q-field>
+            <div class="row justify-center"  style="padding-top: 5%">
+              <q-btn color="primary text-center" @click="createUserWithEmailAndPassword()">Register</q-btn>
+            </div>
+            <div @click="userLogin=true, userReg=false" style="padding-top: 6%" class="row justify-center">
+              <a>Return to Login</a>
+            </div>
           </div>
-        </div>
+          </div>
+           <q-toolbar slot="footer">
+      <div class="q-toolbar-title">
+      </div>
+    </q-toolbar>
+          </q-modal-layout>
       </q-modal>
 
       <router-view />
@@ -146,7 +173,10 @@
 
 <script>
 import * as firebase from 'firebase'
+import { required, email } from 'vuelidate/lib/validators'
 import {
+  Toast,
+  QModalLayout,
   QField,
   QLayout,
   QToolbar,
@@ -178,6 +208,7 @@ export default {
   name: 'layout',
   components: {
     QField,
+    QModalLayout,
     QLayout,
     QToolbar,
     QToolbarTitle,
@@ -205,10 +236,6 @@ export default {
   },
   data () {
     return {
-      sides: {
-        left: false,
-        right: true
-      },
       loginModal: false,
       userLogin: true,
       userReg: false,
@@ -216,7 +243,11 @@ export default {
       ticketCount: 0,
       role: null,
       user: null,
-      form: {
+      credentials: {
+        email: '',
+        password: ''
+      },
+      registration: {
         user: {
           firstname: '',
           lastname: '',
@@ -224,8 +255,6 @@ export default {
           role: ''
         }
       },
-      email: '',
-      password: '',
       adminNav: [{
         group: 'nav',
         icon: 'supervisor_account',
@@ -365,7 +394,19 @@ export default {
       }]
     }
   },
+  validations: {
+    credentials: {
+      email: { required, email },
+      password: { required }
+    }
+  },
   methods: {
+    BadLogin () {
+      Toast.create.negative({
+        html: 'Login Unsuccessful, Please Check Credentials',
+        timeout: 2500
+      })
+    },
     GetTicketNotification () {
       var user = firebase.auth().currentUser
       fetch('api/systeminfo/openticketcount/' + user.uid, {
@@ -397,7 +438,7 @@ export default {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(this.form.user)
+        body: JSON.stringify(this.registraton.user)
       }).then(response => {
         return response.json()
       }).then(json => {
@@ -407,7 +448,7 @@ export default {
       })
     },
     createUserWithEmailAndPassword () {
-      firebase.auth().createUserWithEmailAndPassword(this.form.user.email, this.password).catch(function (error) {
+      firebase.auth().createUserWithEmailAndPassword(this.registration.user.email, this.credentials.password).catch(function (error) {
         var errorCode = error.code
         var errorMessage = error.message
         console.log(errorCode)
@@ -420,13 +461,25 @@ export default {
       })
     },
     signInWithEmailAndPassword () {
-      firebase.auth().signInWithEmailAndPassword(this.email, this.password).catch(function (error) {
+      this.$v.credentials.$touch()
+      if (this.$v.credentials.$error) {
+        Toast.create.negative({
+          html: 'Please Enter the Required Fields',
+          timeout: 2500
+        })
+        return
+      }
+      firebase.auth().signInWithEmailAndPassword(this.credentials.email, this.credentials.password).catch(error => {
         var errorCode = error.code
         var errorMessage = error.message
         console.log(errorCode)
         console.log(errorMessage)
+        this.loginError = true
+        this.BadLogin()
       }).then(user => {
-        this.loginModal = false
+        if (user) {
+          this.loginModal = false
+        }
       })
     }
   },
@@ -439,23 +492,18 @@ export default {
         console.log('logged in')
         firebase.database().ref('/users/' + user.uid).once('value').then(snapshot => {
           this.role = (snapshot.val() && snapshot.val().role) || 'Anonymous'
-          if (this.role === 'Admin') {
-            this.$router.push('/admindashboard')
-          }
-          else if (this.role === 'Technician') {
-            this.GetTicketNotification()
-            this.$router.push('/techticketview')
-          }
-          else {
+          this.$refs.layout.hideRight(() => {
             this.$router.push('/profile')
-          }
+          })
         })
       }
       else {
         console.log('logged out')
         this.isAuthenticated = false
         this.role = null
-        this.$router.push('/welcome')
+        this.$refs.layout.hideRight(() => {
+          this.$router.push('/welcome')
+        })
       }
     })
   }
@@ -463,6 +511,9 @@ export default {
 </script>
 
 <style lang="stylus">
+.with-modal {
+  position: fixed !important;
+}
 .card-wrapper {
   padding: 2%;
 }
